@@ -195,18 +195,32 @@ test.describe("Register new user - Negative scenario", () => {
       await regPassword.fill("123");
       await regPasswordConfirm.fill("123");
       await page.locator(".btn-primary").click();
-      //TODO: Zde by se mi spis libil expect, aby to primo zkontrolovalo ocekavany obrazek
-      // tzn. await expect(page).toHaveScreenshot('registrationInvalidPasswordScreenshot.png', {fullPage: true})
+      await expect(page).toHaveScreenshot(
+        "registrationInvalidPasswordScreenshot.png",
+        { fullPage: true }
+      );
 
-      await page.screenshot({
-        path: "registrationInvalidPasswordScreenshot.png",
-        fullPage: true,
-      });
+      // nevim, jestli mam kod na screesnhoty na prvni test nechat, aby se vytvorily, nebo jestli se jen pred testy zada do konzole prikaz na update screenshotu, tak jsem nechala
+
+      // await page.screenshot({
+      //   path: "registrationInvalidPasswordScreenshot.png",
+      //   fullPage: true,
+      // });
     });
-    // TODO - Stejny komentar jako vyse
+
     await test.step("Writes error messages to console", async () => {
       for (const row of await page.locator(".invalid-feedback").all())
         console.log(await row.textContent());
     });
+
+    //   await page.screenshot({
+    //   path: "registrationInvalidPassword2Screenshot.png",
+    //   fullPage: true,
+    // });
+
+    await expect(page).toHaveScreenshot(
+      "registrationInvalidPassword2Screenshot.png",
+      { fullPage: true }
+    );
   });
 });
