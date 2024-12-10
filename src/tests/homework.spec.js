@@ -173,7 +173,7 @@ test.describe("Register new user - Negative scenario", () => {
       await regEmail.fill(username);
       await regPassword.fill("Czechitas123");
       await regPasswordConfirm.fill("Czechitas123");
-      await page.locator(".btn-primary").click();
+      await registerButton.click();
       await page.screenshot({
         path: "registrationInvalidScreenshot.png",
         fullPage: true,
@@ -194,7 +194,7 @@ test.describe("Register new user - Negative scenario", () => {
       await regEmail.fill(username);
       await regPassword.fill("123");
       await regPasswordConfirm.fill("123");
-      await page.locator(".btn-primary").click();
+      await registerButton.click();
       await expect(page).toHaveScreenshot(
         "registrationInvalidPasswordScreenshot.png",
         { fullPage: true }
