@@ -108,6 +108,7 @@ async function goToRegistrationPage(page) {
 }
 
 test.describe("Registration", () => {
+  test.tag("@ci");
   test.beforeEach("001 - Registration form validation", async ({ page }) => {
     await goToRegistrationPage(page);
 
