@@ -1,5 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { expect, test } from "@playwright/test";
+import { addDays, format } from "date-fns";
 
 import {
   address,
@@ -12,6 +13,28 @@ import {
   substitute,
   username,
 } from "../fixtures/fixtures2";
+
+async function goToLoginPage(page) {
+  await page.goto("/prihlaseni");
+}
+async function clickToCreateOrder(page) {
+  await page.getByRole("button", { name: "Uložit objednávku" }).click();
+}
+
+async function verifyHeadingNotVisible(page) {
+  await expect(
+    page.getByRole("heading", { name: "Děkujeme za objednávku" })
+  ).not.toBeVisible();
+}
+
+function getFormattedStartDate() {
+  return format(new Date(), "yyyy-MM-dd");
+}
+
+function getFormattedEndDate(daysToAdd = 1) {
+  const endDate = addDays(new Date(), daysToAdd);
+  return format(endDate, "dd.MM.yyyy");
+}
 
 test.describe("Order form link validation before each test", () => {
   async function openHomePage(page) {
@@ -61,11 +84,6 @@ test.describe("Order form link validation before each test", () => {
     });
   }
 
-  // Day camp fields
-  function orderFormDayCampDateLocator(page) {
-    return page.getByLabel("Kurz");
-  }
-
   test.beforeEach(async ({ page }) => {
     await openHomePage(page);
     await page.getByText("Pro učitelé").click();
@@ -104,19 +122,6 @@ test.describe("Order form link validation before each test", () => {
       await expect(orderFormName).toBeEditable();
       await expect(orderFormDayCamp).toBeAttached();
 
-      // Day camp fields
-      const orderFormDayCampDate = orderFormDayCampDateLocator(page);
-
-      const orderFormDayCampChildren = page.getByRole("spinbutton", {
-        name: "Počet dětí",
-      });
-      const orderFormDayCampChildAge = page.getByRole("textbox", {
-        name: "ve věku",
-      });
-      const orderFormDayCampAdults = page.getByRole("spinbutton", {
-        name: "Počet pedagogického doprovodu",
-      });
-
       await orderFormDayCamp.click();
       await expect(
         page.getByRole("button", { name: "Uložit objednávku" })
@@ -148,46 +153,6 @@ test.describe("Order form link validation before each test", () => {
     });
   });
 
-  async function checkFieldIsFilled(fieldLocator) {
-    const fieldValue = await fieldLocator.inputValue(); // Get the value of the input field
-    // Ensure the value is not null, undefined, or empty
-    await expect(fieldValue).toBeTruthy(); // Ensure the field has a truthy value
-  }
-
-  //   test("02 Should not submit order with missing required fields", async ({
-  //     page,
-  //   }) => {
-  //     const requiredFields = [
-  //       (orderFormIco = page.locator("input#ico")),
-  //       (orderFormClient = page.locator("input#client")),
-  //       (orderFormAddress = page.locator("input#address")),
-  //       (orderFormSubstitute = page.locator("input#substitute")),
-  //       (orderFormName = page.locator("input#contact_name")),
-  //       (orderFormPhone = page.locator("input#contact_tel")),
-  //       (orderFormEmail = page.locator("input#contact_mail")),
-  //       (orderFormStartDate = page.locator("input#start_date_1")),
-  //       (orderFormEndDate = page.locator("input#end_date_1")),
-  //       (orderFormDayCamp = page.locator("input#dayCamp")),
-  //       (orderFormDayCampTab = page.locator('role=tab[name="Příměstský tábor"]')),
-  //     ];
-
-  //     // Simulate user interaction
-  //     await orderFormDayCampTab.click();
-
-  //     // Wait for the submit button to be attached
-  //     await expect(page.locator('input[name="camp"]')).toBeAttached();
-  //     await page.locator('input[name="camp"]').click();
-
-  //     await checkFieldIsFilled(orderFormIco);
-
-  //     const fieldValue = await orderFormIco.inputValue();
-  //     await expect(fieldValue).not.toBe("");
-  //   });
-
-  async function goToLoginPage(page) {
-    await page.goto("/prihlaseni");
-  }
-
   test("03 Should create an order ", async ({ page }) => {
     const fakeEmail = faker.internet.email();
 
@@ -203,14 +168,11 @@ test.describe("Order form link validation before each test", () => {
       const orderFormEndDate = orderFormEndDateLocator(page);
       const orderFormDayCamp = orderFormDayCampTabLocator(page);
 
-      const startDateObj = new Date(startDate.split(".").reverse().join("-"));
-      startDateObj.setDate(startDateObj.getDate() + 1);
-      const endDate = startDateObj
-        .toLocaleDateString("en-GB")
-        .replace(/\//g, ".");
-
       await orderFormIco.fill(ico);
       await page.locator("div.toast-message").waitFor({ state: "detached" });
+
+      const startDate = getFormattedStartDate();
+      const endDate = getFormattedEndDate();
 
       await orderFormSubstitute.fill(substitute);
       await orderFormName.fill(contactName);
@@ -238,7 +200,7 @@ test.describe("Order form link validation before each test", () => {
 
       await expect(
         page.getByRole("heading", { name: "Děkujeme za objednávku" })
-      ).toBeVisible;
+      ).toBeVisible();
     });
 
     await test.step("Should check the created order in the system", async () => {
@@ -274,21 +236,11 @@ test.describe("Order form link validation before each test", () => {
     await page.locator('label:has-text("Jméno a příjmení")').click();
 
     const toastMessage = page.locator(".toast-message");
-    await expect(toastMessage).toBeAttached;
+    await expect(toastMessage).toBeAttached();
     await expect(toastMessage).toHaveText(
       "Data z ARESu se nepodařilo načíst, vyplňte je prosím ručně"
     );
   });
-
-  async function clickToCreateOrder(page) {
-    await page.getByRole("button", { name: "Uložit objednávku" }).click();
-  }
-
-  async function verifyHeadingNotVisible(page) {
-    await expect(
-      page.getByRole("heading", { name: "Děkujeme za objednávku" })
-    ).not.toBeVisible();
-  }
 
   test("05-01 Verifies form won't be created when when incomplete", async ({
     page,
@@ -303,11 +255,6 @@ test.describe("Order form link validation before each test", () => {
     const fakeEmail = faker.internet.email();
     const orderFormStartDate = orderFormStartDateLocator(page);
     const orderFormEndDate = orderFormEndDateLocator(page);
-    const startDateObj = new Date(startDate.split(".").reverse().join("-"));
-    startDateObj.setDate(startDateObj.getDate() + 1);
-    const endDate = startDateObj
-      .toLocaleDateString("en-GB")
-      .replace(/\//g, ".");
     const orderFormDayCamp = orderFormDayCampTabLocator(page);
 
     const orderFormDayCampChildren = page.getByRole("spinbutton", {
@@ -376,21 +323,11 @@ test.describe("Order form link validation before each test", () => {
       await verifyHeadingNotVisible(page);
     });
 
-    await test.step("Only ICO, Client, Address, Substitute, Name, Phone filled, Email, start date", async () => {
+    await test.step("Only ICO, Client, Address, Substitute, Name, Phone filled, Email, Start date, End date", async () => {
+      const startDate = getFormattedStartDate();
+      const endDate = getFormattedEndDate();
+
       await orderFormStartDate.fill(startDate);
-      await orderFormDayCamp.click();
-      await clickToCreateOrder(page);
-      await verifyHeadingNotVisible(page);
-    });
-
-    await test.step("Only ICO, Client, Address, Substitute, Name, Phone filled, Email, Start date, End date", async () => {
-      await orderFormEndDate.fill(endDate);
-      await orderFormDayCamp.click();
-      await clickToCreateOrder(page);
-      await verifyHeadingNotVisible(page);
-    });
-
-    await test.step("Only ICO, Client, Address, Substitute, Name, Phone filled, Email, Start date, End date", async () => {
       await orderFormEndDate.fill(endDate);
       await orderFormDayCamp.click();
       await clickToCreateOrder(page);
@@ -427,11 +364,8 @@ test.describe("Order form link validation before each test", () => {
       const orderFormEndDate = orderFormEndDateLocator(page);
       const orderFormDayCamp = orderFormDayCampTabLocator(page);
 
-      const startDateObj = new Date(startDate.split(".").reverse().join("-"));
-      startDateObj.setDate(startDateObj.getDate() + 1);
-      const endDate = startDateObj
-        .toLocaleDateString("en-GB")
-        .replace(/\//g, ".");
+      const startDate = getFormattedStartDate();
+      const endDate = getFormattedEndDate();
 
       await orderFormIco.fill(ico);
       await page.locator("div.toast-message").waitFor({ state: "detached" });
@@ -448,7 +382,7 @@ test.describe("Order form link validation before each test", () => {
 
       await orderFormDayCamp.click();
 
-      await expect(page.locator("#camp-students")).toBeAttached;
+      await expect(page.locator("#camp-students")).toBeAttached();
       await page.locator("#camp-students").fill("2");
 
       await page.getByRole("textbox", { name: "ve věku" }).fill("3 a 5 let");
